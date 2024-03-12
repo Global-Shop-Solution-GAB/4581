@@ -1,0 +1,335 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.sError.Declare(String)
+
+'This project will generate an Outlook email every time a new Sales Order is Generated.
+'Program runs from OE>NEW>Post Save hook 11872
+'Coded by: WAW
+'Date: 7/20/2017
+
+
+'
+'modified RAN
+
+'Variable.Passed.SYS050 to check calling ptogram
+'v.Passed.USERSAVE to check  buuton click - "Lines" -N or "Save" - Y
+'this check required so that emails are not sent twice.
+
+'Open Connection
+F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,300)
+f.Intrinsic.Control.If(v.Caller.Hook,=,11560)
+'POPULATE
+	f.Intrinsic.Control.If(Variable.Passed.000003.Trim,<>,"")
+	f.Intrinsic.Control.andIf(v.Caller.Switches,<>,"N")
+		f.Intrinsic.Control.CallSub(order_status)
+		v.Passed.GLOBal.Set(v.Args.Status)
+	f.Intrinsic.Control.Else
+		v.Passed.GLOBal.Set("")
+	f.Intrinsic.Control.EndIf
+'POST SAVE
+f.Intrinsic.Control.elseif(v.Caller.Hook,=,11872)
+'Function.Intrinsic.Debug.InvokeDebugger
+'Function.Intrinsic.Debug.Stop
+
+	f.Intrinsic.Control.If(v.Caller.Switches,=,"N")
+	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+'		f.Intrinsic.UI.Msgbox("NEW ORDE")
+			f.Intrinsic.Control.CallSub(email)
+			v.Passed.GLOBal.Set("")
+	f.Intrinsic.Control.elseIf(Variable.Passed.GLOBAL,=,"1")
+	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+'		f.Intrinsic.UI.Msgbox("NEW from Quote")
+'		Function.Intrinsic.Debug.InvokeDebugger
+'		Function.Intrinsic.Debug.Stop
+		
+		f.Intrinsic.Control.CallSub(email)
+		v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.Else
+'		f.Intrinsic.UI.Msgbox("OPEN")
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.EndIf
+
+
+
+'f.Intrinsic.Control.If(v.Caller.Hook,=,11560)
+''POPULATE
+'	f.Intrinsic.Control.If(Variable.Passed.000003.Trim,<>,"")
+'		v.Passed.GLOBal.Set("1")
+'	f.Intrinsic.Control.Else
+'		v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.EndIf
+''POST SAVE
+'f.Intrinsic.Control.elseif(v.Caller.Hook,=,11872)
+''	f.Intrinsic.Control.If(Variable.Passed.SYS050.Trim,<>,"")
+'	f.Intrinsic.Control.If(v.Caller.Switches,=,"N")
+'	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+''		f.Intrinsic.UI.Msgbox("NEW ORDE")
+'			f.Intrinsic.Control.CallSub(email)
+'			v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.elseIf(Variable.Passed.GLOBAL,=,"1")
+'	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+''		f.Intrinsic.UI.Msgbox("NEW from Quote")
+'		f.Intrinsic.Control.CallSub(email)
+'		v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.Else
+''		f.Intrinsic.UI.Msgbox("OPEN")
+'	f.Intrinsic.Control.EndIf
+'f.Intrinsic.Control.EndIf	
+
+
+''========================
+''f.Intrinsic.Control.If(v.Caller.Hook,=,11560)
+'''POPULATE
+''	f.Intrinsic.Control.If(Variable.Passed.000003.Trim,<>,"")
+''	f.Intrinsic.Control.ANDIf(Variable.caller.sync,=,False)
+''		v.Passed.GLOBal.Set("1")
+''	f.Intrinsic.Control.Else
+''		v.Passed.GLOBal.Set("")
+''	f.Intrinsic.Control.EndIf
+'''POST SAVE
+''f.Intrinsic.Control.elseif(v.Caller.Hook,=,11872)
+''	f.Intrinsic.Control.If(Variable.Passed.SYS050.Trim,<>,"")
+'	f.Intrinsic.Control.If(v.Caller.Switches,=,"N")
+'	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+''		f.Intrinsic.UI.Msgbox("NEW ORDE")
+'			f.Intrinsic.Control.CallSub(email)
+'			v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.elseIf(variable.caller.sync,=,False)
+'	f.Intrinsic.Control.ANDIf(v.Passed.USERSAVE,=,"Y")
+''		f.Intrinsic.UI.Msgbox("NEW from Quote")
+'		f.Intrinsic.Control.CallSub(email)
+'		v.Passed.GLOBal.Set("")
+'	f.Intrinsic.Control.Else
+''		f.Intrinsic.UI.Msgbox("OPEN")
+'	f.Intrinsic.Control.EndIf
+''f.Intrinsic.Control.EndIf	
+
+
+
+'F.Intrinsic.Debug.InvokeDebugger
+'
+'F.Intrinsic.Debug.Stop
+
+''if the user clicks the save button on SO and it is a new SO email each employee
+'f.Intrinsic.Control.If(v.Caller.Switches,=,"N")
+'	f.Intrinsic.Control.If(v.Passed.USERSAVE,=,"Y")
+'		f.Intrinsic.Control.CallSub(email)
+'	f.Intrinsic.Control.EndIf
+'f.Intrinsic.Control.Else
+''	call the unload sub
+'	f.Intrinsic.Control.CallSub(unload)
+'f.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4581_SOEmail.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+F.Intrinsic.Control.SetErrorHandler("UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.sError.Declare(String)
+
+'close connection and end the program
+F.ODBC.Connection!conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4581_SOEmail.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.End
+
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Unload.End
+
+Program.Sub.Email.Start
+F.Intrinsic.Control.SetErrorHandler("Email_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.sError.Declare(String)
+v.Local..BulkDeclareString(sBody,sSubject,sSql,sSO,sSender,sSenderEmail,sRecip,sline,sComments,sDueDate,smonth,sday,syear,sLineComments,slineSql)
+v.Local..BulkDeclareLong(i,iSender)
+v.Local..BulkDeclareDate(dDueDate)
+
+'Pad the sales order number
+f.Intrinsic.String.LPad(v.Passed.000003,"0",7,v.Local.sSo)
+
+
+'create the subject
+v.Local.ssubject.Set("New Sales Order Created")
+
+'get the email addresses for all employess
+f.Intrinsic.String.Build("Select NAME, EMAIL_ADDR from V_EMPLOYEE_MSTR where EMAIL_ADDR <> '{0}'","",v.Local.ssql)
+'f.Data.DataTable.CreateFromSQL("dtEMAIL","conx",v.Local.ssql)
+
+F.ODBC.Connection!conx.ExecuteAndReturn(V.Local.sSql,V.Local.srecip)
+f.Intrinsic.String.Replace(V.local.srecip,"#$#","@!@",V.local.srecip)
+
+'get the line information
+
+f.Intrinsic.String.Build("select V_ORDER_LINES.PART, V_ORDER_LINES.ORDER_NO, V_ORDER_LINES.RECORD_NO, V_ORDER_LINES.PART, V_ORDER_LINES.DESCRIPTION, V_ORDER_LINES.QTY_ORDERED from V_ORDER_LINES where V_ORDER_LINES.ORDER_NO = '{0}'",v.Local.sso,v.Local.ssql)
+F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.conX!rst.EOF,=,True)
+
+	'get the header comments
+	f.Intrinsic.String.Build("select * from V_ORDER_LN_TEXT where ORDER_NUM = '{0}' and ORDER_LINE = '{1}'",v.Local.sso,v.ODBC.conx!rst.FieldValTrim!RECORD_NO,v.Local.slinesql)
+	F.ODBC.Connection!conX.OpenLocalRecordsetRO("rstLineText",V.Local.slineSQL)
+	F.Intrinsic.Control.if(V.ODBC.conX!rstLineText.EOF,=,False)	
+		v.Local.slineComments.Set(v.ODBC.conx!rstLineText.FieldValTrim!TEXT)
+	f.Intrinsic.Control.Else
+		v.Local.slinecomments.Set("")
+	f.Intrinsic.Control.EndIf
+	f.ODBC.conx!rstLineText.close
+
+	'see if the line string is blank
+	f.Intrinsic.Control.If(v.Local.sline.Trim,=,"")	
+		'loop through and build the line information
+		f.Intrinsic.String.Build("Line: {0} Part: {1} Description: {2} Quantity: {3} Notes: {4}",v.ODBC.conx!rst.FieldValTrim!RECORD_NO,v.ODBC.conx!rst.FieldValTrim!PART,v.ODBC.conx!rst.FieldValTrim!DESCRIPTION,v.ODBC.conx!rst.FieldValTrim!QTY_ORDERED,v.local.slinecomments,v.Local.sline)
+	f.Intrinsic.Control.Else
+		'loop through and build the line information
+		f.Intrinsic.String.Build("{4}{5}{5}Line: {0} Part: {1} Description: {2} Quantity: {3} Notes: {6}",v.ODBC.conx!rst.FieldValTrim!RECORD_NO,v.ODBC.conx!rst.FieldValTrim!PART,v.ODBC.conx!rst.FieldValTrim!DESCRIPTION,v.ODBC.conx!rst.FieldValTrim!QTY_ORDERED,v.Local.sline,v.Ambient.NewLine,v.Local.slinecomments,v.Local.sline)
+	f.Intrinsic.Control.EndIf
+F.ODBC.conx!rst.MoveNext
+Function.Intrinsic.Control.Loop
+F.ODBC.conX!rst.Close
+
+'get the header comments
+f.Intrinsic.String.Build("select * from V_ORDER_HF_TEXT where ORDER_NUMBER = '{0}'",v.Local.sso,v.Local.ssql)
+F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.conX!rst.EOF,=,True)
+		f.Intrinsic.Control.If(v.Local.scomments.Trim,=,"")
+			v.Local.scomments.Set(v.ODBC.conx!rst.FieldValTrim!TEXT)
+		f.Intrinsic.Control.Else
+			'build the comments together
+			f.Intrinsic.String.Build("{0} {1}",v.Local.scomments,v.ODBC.conx!rst.FieldValTrim!TEXT,v.Local.scomments)
+		f.Intrinsic.Control.EndIf
+'	f.Intrinsic.Control.endif
+F.ODBC.conx!rst.MoveNext
+Function.Intrinsic.Control.Loop
+F.ODBC.conX!rst.Close
+
+v.Local.sduedate.Set(v.passed.000024)
+
+f.Intrinsic.String.Left(v.Local.sduedate,4,v.Local.syear)
+f.Intrinsic.String.Mid(v.Local.sduedate,5,2,v.Local.smonth)
+f.Intrinsic.String.Right(v.Local.sduedate,2,v.Local.sday)
+f.Intrinsic.String.Build("{0}/{1}/{2}",v.Local.smonth,v.Local.sday,v.Local.syear,v.Local.sduedate)
+
+'build the body of the email
+f.Intrinsic.String.Build("Sales Order No: {0}{1}Customer: {2} {1}{3} {4}, {5} {6}{1}Customer PO No: {7}{1}Due Date: {8}{1}",v.Local.sso,v.Ambient.NewLine,v.Passed.000008,v.Passed.000010,v.Passed.000016,v.Passed.000017,v.Passed.000018,v.Passed.000025,v.local.sduedate,v.Local.sbody)
+'build the body with the lines and comments
+f.Intrinsic.String.Build("{0}{1}{2}",v.Local.sbody,v.Ambient.NewLine,v.Local.sline,v.Local.sbody)
+
+'add comments if there are some
+f.Intrinsic.Control.If(v.Local.scomments.Trim,<>,"")
+	f.Intrinsic.String.Build("{0}{1}{1}{2}",v.Local.sbody,v.Ambient.NewLine,v.Local.scomments,v.Local.sbody)
+f.Intrinsic.Control.EndIf
+
+'get the user's email
+f.Global.Security.GetUserEmail(v.Caller.User.trim,v.Local.sSenderEmail)
+'get the user's ID
+f.Global.Security.GetUserId(v.Caller.User,v.Caller.CompanyCode,v.Local.isender)
+
+'get the user's name
+f.Global.Security.GetUsernameFromID(v.local.isender,v.Local.sSender)
+
+f.Intrinsic.String.Split(v.Local.ssender,"*!*",v.Local.ssender)
+
+'string the values together
+f.Intrinsic.String.Build("{0}{1}",v.Local.ssender(1),v.Local.ssenderemail,v.Local.ssender)
+'f.Intrinsic.String.Replace(V.local.sRecepient,"#$#","@!@",V.local.sRecepient)
+
+''loop through the email list and email each employee
+'F.Intrinsic.Control.For(v.Local.i,0,v.dataTable.dtEmail.RowCount--,1)
+'	'string together the recipients email/name
+'	f.Intrinsic.String.Build("{0}*!*{1}",v.datatable.dtEMAIL(v.Local.i).NAME.fieldvaltrim,v.DataTable.dtEMAIL(v.Local.i).EMAIL_ADDR.fieldvaltrim,v.Local.srecip)
+'	'send an email to each employee
+''  	F.Global.Messaging.QueueMessage(V.Caller.CompanyCode,V.local.isender,"",v.Local.ssubject,V.local.ssender,v.Local.srecip,V.Local.sbody)
+'f.Intrinsic.Control.Next(v.Local.i)
+
+
+F.Global.Messaging.QueueMessage(V.Caller.CompanyCode,V.local.isender,"",v.Local.ssubject,V.local.ssender,v.Local.srecip,V.Local.sbody)
+
+F.Intrinsic.Control.Label("Email_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4581_SOEmail.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(unload)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Email.End
+
+Program.Sub.Order_Status.Start
+F.Intrinsic.Control.SetErrorHandler("Order_Status_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+variable.local.TodayDate.Declare(date)
+variable.local.OrderDate.Declare(date)
+variable.local.lRet.Declare(long)
+v.Local.ssql.Declare(string)
+v.Local.sOrderno.Declare(string)
+
+Function.Intrinsic.Date.Dateadd ("N",2,v.ambient.now, variable.local.TodayDate)
+
+'Variable.Passed.000023  v.ambient.date
+Function.Intrinsic.Date.ConvertDString(Variable.Passed.000023,"YYYY/MM/DD", variable.local.OrderDate)
+Function.Intrinsic.Date.DateDiff ("d",variable.local.TodayDate,variable.local.OrderDate, variable.local.lRet)
+'check to see if it is today data else old dorder
+f.Intrinsic.Control.If(variable.local.lRet,=,0)
+	f.Intrinsic.String.LPad(Variable.Passed.000003.Trim,"0",7,v.Local.sOrderno)
+	f.Intrinsic.String.Build("select time_last_chg from v_order_header where order_no = '{0}'",v.Local.sOrderno,v.Local.ssql)
+	F.ODBC.Connection!conx.OpenRecordsetRO("rst",V.Local.sSQL)
+	f.Intrinsic.Control.If(v.ODBC.conx!rst.EOF,=,False)
+		Function.Intrinsic.Date.DateDiff ("N",variable.local.TodayDate,v.ODBC.conx!rst.FieldVal!time_last_chg, variable.local.lRet)
+'		Function.Intrinsic.Debug.InvokeDebugger
+'		Function.Intrinsic.Debug.Stop
+'		
+		f.Intrinsic.Control.If(variable.local.lRet,<,-3)
+'			f.Intrinsic.UI.Msgbox("O")
+			f.Intrinsic.Variable.AddRV("Status","")
+		f.Intrinsic.Control.Else 
+'			f.Intrinsic.UI.Msgbox("N")
+			f.Intrinsic.Variable.AddRV("Status","1")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conx!rst.Close
+f.Intrinsic.Control.Else
+	f.Intrinsic.Variable.AddRV("Status","")
+f.Intrinsic.Control.EndIf 
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Order_Status_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4581_SOEmail.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Order_Status.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$This will be a .Net GAB dashboard that facilitates workflows.  
+
+1. 3 modes, by department. The three modes will have different data to be displayed as it relates to the workflow being used.
+2. Will be able to complete/signoff and track workflows
+3. Workflow template that is used will be determined by Customer Service Request Type.
+4. Work Flow templates will still be facilitated in Standard GSS (Business Intelligence>Admin>Workflow Template)
+5. Dashboard will be able to export to excel.
+6. Sorting, Grouping, Filtering capabilities in the grid(s).
+Program.Sub.Comments.End
